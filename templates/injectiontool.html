@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,Chrome=1">
+    <meta name="renderer" content="webkit">
+    <script src="../static/InjectionTool/jquery-3.4.1.min.js"></script>
+    <script src="../static/InjectionTool/bootstrap.min.js"></script>
+    <script src="../static/InjectionTool/utils.js"></script>
+    <script src="../static/InjectionTool/num.js"></script>
+    <link href="../static/InjectionTool/bootstrap.min.css" rel="stylesheet" />
+    <link href="../static/InjectionTool/index.css" rel="stylesheet" />
+
+    <title>注塑机选型及注塑节拍计算工具</title>
+   
+<!-- 注塑机选型 -->
+
+<body>
+   <div class="col-lg-4">
+      <p></p>
+      <h1 class="text-center mb-3">注塑机选型</h1>
+      <form action="">      
+         <table class="mt-3 col-12">
+            <tbody>
+               <!-- 选择材料 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">材料</span>
+                           </div>
+                           <input type="text" name="select_material_type" class="form-control" id="txtHP_Material" list="greetings" >
+                           <!-- 使用style="display:none;"将datalist元素设定为不显示 -->
+                           <datalist id="greetings" style="display:none;">
+                           <!-- <datalist id="greetings"> -->
+                              <option value="">请输入材料</option>
+                              {% for value in material_name_list %}
+                              <!-- <option hassubinfo="true">{{ key }}</option> -->
+                              <option value="{{ value.material_type }}" hassubinfo="true">{{ value.material_type }}</option> 
+                              {% endfor %}
+                           </datalist>
+                     </div>
+                  </td>
+               </tr>
+               
+               {% if material_list_err %}
+                  <script>
+                      alert('{{ msg.material_list_err }}');
+                   </script>
+               {% endif %}
+
+               <!-- 选择材料的密度 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                        <div class="input-group-prepend">
+                              <span class="input-group-text">密度</span>
+                        </div>
+                        <!-- <input id="txtHP_Density" type="text" class="form-control text-right" disabled="disabled"> -->
+                        <select id="txtHP_Density" type="text" class="form-control text-right" name="select_material_density" disabled="disabled">
+
+                        </select>
+                        <div class="input-group-append">
+                              <span class="input-group-text">克/立方厘米</span>
+                        </div>
+                     </div>
+                  </td>
+               </tr> 
+               <!-- 根据选择的材料，自动获取后端的该种材料最大的密度 -->
+               <script language="JavaScript">
+                  $("#txtHP_Material").change(function() {
+                    var select_material_type = $(this).val();
+                    $.ajax({
+                           url: '/get_material_density',
+                           data:{"select_material_type":$(this).val()},
+                           type: 'GET',
+                           dataType: 'json',
+                           success: function (data_material_density) {
+                           var content='';
+                           $.each(data_material_density, function(i, item){
+                                content+='<option value='+item.density_max+'>'+item.density_max+'</option>'
+                                 });
+                           $('#txtHP_Density').html(content)
+                                                                     },
+                        });
+                  });
+               </script>
+               <!-- 输入零件的净重 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">零件净重</span>
+                           </div>
+                           <input type="text" name="part_net_weight" class="form-control" id="txtHP_NetWeight" onkeyup="value=value.replace(/^\D*(\d*(?:\.\d{0,1})?).*$/g, '$1')" )">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">克</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 生成零件毛重，动态改变value值 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">零件毛重</span>
+                           </div>
+                           <input type="text" name="part_gross_weight" class="form-control" id="txtHP_GrossWeight" value="" onkeyup="value=value.replace(/^\D*(\d*(?:\.\d{0,1})?).*$/g, '$1')" >  
+                           <div class="input-group-append">
+                              <span class="input-group-text">克</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 计算零件毛重 -->
+               <script language="JavaScript">
+                  $("#txtHP_NetWeight").change(function() {
+                    $.ajax({
+                           url: '/gross_weight',
+                           data:{"product_net_weight":$(this).val()},
+                           type: 'GET',
+                           dataType: 'json',
+                           success: function (product_gross_weight_json) {
+                           console.log(product_gross_weight_json.product_net_weight)
+                           $('#txtHP_GrossWeight').attr("value", product_gross_weight_json.product_net_weight)
+                                                                     },
+                        });
+                  });
+               </script>
+               <!-- 输入零件的长边尺寸 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">零件长边</span>
+                           </div>
+                           <input type="text" name="part_length" class="form-control" id="txtHP_PartLength" onkeyup="value=value.replace(/[^\d]/g,'')">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">毫米</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 输入零件的短边尺寸 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">零件短边</span>
+                           </div>
+                           <input type="text" name="part_width" class="form-control" id="txtHP_PartWidth" onkeyup="value=value.replace(/[^\d]/g,'')">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">毫米</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 输入零件的深度尺寸 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">零件深度</span>
+                           </div>
+                           <input type="text" name="part_height" class="form-control" id="txtHP_PartHeight" onkeyup="value=value.replace(/[^\d]/g,'')">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">毫米</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 输入模穴数量 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">模穴数量</span>
+                           </div>
+                           <input type="text" name="carve_count" class="form-control" id="txtHP_CarveCount" value="" onkeyup="value=value.replace(/[^\d]/g,'')">  
+                     </div>
+                  </td>
+               </tr>
+               <!-- 输入模穴排布行数 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">模穴排布行数</span>
+                           </div>
+                           <input type="text" name="carve_row" class="form-control" id="txtHP_CarveRow" value="" onkeyup="value=value.replace(/[^\d]/g,'')">  
+                     </div>
+                  </td>
+               </tr>
+               <!-- 输入模具排布列数 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">模穴排布列数</span>
+                           </div>
+                           <input type="text" name="carve_column" class="form-control" id="txtHP_CarveColumn" value="" onkeyup="value=value.replace(/[^\d]/g,'')">  
+                     </div>
+                  </td>
+               </tr>
+               <!-- 计算模穴数量 -->
+               <script language="JavaScript">
+                  $("#txtHP_PartHeight").change(function() {
+                    $.ajax({
+                           url: '/carve_count',
+                           data:{"part_length":$("#txtHP_PartLength").val(),
+                                 "part_width":$("#txtHP_PartWidth").val()},
+                           type: 'GET',
+                           dataType: 'json',
+                           success: function (number_die_caves_json) {
+                           console.log(number_die_caves_json.number_die_caves)
+                           $('#txtHP_CarveCount').attr("value", number_die_caves_json.number_die_caves)
+                                                                     },
+                        });
+                  });
+               </script>
+               <!-- 计算及重置按钮 -->
+               <tr>
+                  <td class="text-center pt-4 pb-4">
+                      <button type="button" class="btn btn-primary" id="btnCalc" onclick="btnCalc_onclick();">计 算</button>
+                      <button type="button" class="btn btn-warning ml-2" id="btnReset" onclick="btnReset_onclick()">重 置</button>
+                      <input type="reset" style="display: none;">
+                  </td>
+               </tr>
+               <!-- 计算最小注射重量 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">设备所需最小注射重量</span>
+                           </div>
+                           <input type="text" name="machine_injection_weight_min" class="form-control" id="txtHP_MachineInjectionWeight" disabled="disabled">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">克</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+
+               <!-- 计算最小注射重量，开模行程 -->
+               <script>
+               
+               function btnReset_onclick() {
+                   $("input[type=reset]").trigger("click");
+               }
+       
+               function btnCalc_onclick() {
+                  var part_gross_weight= $("#txtHP_GrossWeight").val();
+                  var carve_count= $("#txtHP_CarveCount").val();
+                  var part_height= $("#txtHP_PartHeight").val();
+                   machine_injection_weight_min = Math.ceil(part_gross_weight * carve_count / 0.75);
+                   toggle_stroke = Math.ceil(part_height * 3.5)
+                   setValueById("txtHP_MachineInjectionWeight", machine_injection_weight_min);
+                   setValueById("txtHP_ToggleStroke", toggle_stroke);
+               }
+
+               </script>  
+               <!-- 计算生成锁模力 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">锁模力</span>
+                           </div>
+                           <input type="text" name="clamping_force" class="form-control" id="txtHP_ClampingForce" disabled="disabled">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">千牛</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 计算生成最小拉杆间隔 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">设备最小拉杆间隔</span>
+                           </div>
+                           <input type="text" name="space_bars" class="form-control" id="txtHP_SpaceBars" disabled="disabled">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">毫米</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 计算生成最小开模行程 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">设备最小开模行程</span>
+                           </div>
+                           <input type="text" name="toggle_stroke" class="form-control" id="txtHP_ToggleStroke" disabled="disabled">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">毫米</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 计算生成推荐注塑机吨位 -->
+               <tr>
+                  <td>
+                     <div class="input-group mb-1">
+                           <div class="input-group-prepend">
+                              <span class="input-group-text">推荐注塑机吨位</span>
+                           </div>
+                           <input type="text" name="recommend_machine_type" class="form-control" id="txtHP_RecommendMachineType" disabled="disabled">  
+                           <div class="input-group-append">
+                              <span class="input-group-text">吨</span>
+                           </div>
+                     </div>
+                  </td>
+               </tr>
+               <!-- 计算注塑机吨位 -->
+               <script language="JavaScript">
+                  $("#btnCalc").click(function() {
+                    $.ajax({
+                           url: '/recommend_machine_type',
+                           data:{"part_length":$("#txtHP_PartLength").val(),
+                                 "part_width":$("#txtHP_PartWidth").val(),
+                                 "select_material_type":$("#txtHP_Material").val(),
+                                 "select_material_density":$("#txtHP_Density").val(),
+                                 "machine_injection_weight_min":$("#txtHP_MachineInjectionWeight").val(),
+                                 "toggle_stroke":$("#txtHP_ToggleStroke").val(),
+                                 "carve_count":$("#txtHP_CarveCount").val(),
+                                 "carve_row":$("#txtHP_CarveRow").val(),
+                                 "carve_column":$("#txtHP_CarveColumn").val(),
+                              },
+                           type: 'GET',
+                           dataType: 'json',
+                           success: function (clamping_force_recommend_json) {
+                           console.log(clamping_force_recommend_json.space_bars);
+                           $('#txtHP_SpaceBars').attr("value", clamping_force_recommend_json.space_bars);
+                           $('#txtHP_ClampingForce').attr("value", clamping_force_recommend_json.clamping_force);
+                           $('#txtHP_RecommendMachineType').attr("value", clamping_force_recommend_json.clamping_force_RC);
+                                                                     },
+                        });
+                  });
+              </script>
+         </table>
+      </form> 
+   </div>
+</body>
+</html>

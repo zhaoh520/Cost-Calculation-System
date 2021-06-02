@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="UTF-8">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form enctype="multipart/form-data" action="{% url 'updatesystem' %}" method="post">
+    {% csrf_token %}
+   系统名称：<select name="seldnsname" id="systemname">
+    <option value ="请选择">请选择</option>
+    {% for dnsnames in dnsnamelist %}
+        <option value ={{ dnsnames.material_type }}>{{ dnsnames.material_type }}</option>
+    {% endfor %}
+</select></br>
+</br>
+主机名称：<select name="selhostipaddrs" id="hostnames">
+
+</select>
+</br>
+</br>
+
+   <input type="submit" value="更新应用" />
+    </br>
+
+    </br>
+    <h4 style="color: red"><b>{{ login_err }}</b></h4>
+
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+<script language="JavaScript">
+    $("#systemname").change(function() {
+      var dnsname = $(this).val();
+      $.ajax({
+        url: '/getipaddr/',
+
+          data:{"seldnsname":$(this).val()},
+     type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            var content='';
+            $.each(data, function(i, item){
+                  content+='<option value='+item.density_max+'>'+item.density_max+'</option>'
+                });
+            $('#hostnames').html(content)
+        },
+
+      });
+    });
+
+
+</script>
+</form>
+</body>
+</html>

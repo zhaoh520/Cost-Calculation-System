@@ -1,0 +1,35 @@
+﻿h1 {
+    font-size: 22px;
+}
+
+p {
+    text-indent: 2em;
+}
+
+.hidden {
+    display: none;
+}
+
+.show {
+    display:;
+}
+
+.input_disabled {
+    background-color: aliceblue !important;
+    color: blue;
+}
+
+.bottom {
+    margin-top: 20px;
+}
+
+    .bottom > p {
+        margin: 8px 0px;
+        color: darkgrey;
+        line-height: 1.5em;
+        text-align: center;
+    }
+
+        .bottom > p > a {
+            color: darkgray;
+        }
